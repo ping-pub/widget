@@ -1,12 +1,13 @@
 <script setup>
-// import { HelloPing } from 'ping-widget';
+/**
+ * 组件按需引入方式
+ */
+import { HelloPing } from 'ping-widget';
 </script>
 
 <template>
   <div>
     <!-- <div>Ping Widget Version: {{ pingWidget?.version }}</div> -->
-    <!-- <hello-ping /> -->
-    <!-- 组件全局引入方式 -->
-    <test-cpp />
+    <hello-ping />
   </div>
 </template>

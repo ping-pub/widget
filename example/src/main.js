@@ -1,4 +1,6 @@
-import { createApp } from 'vue'
-import App from './App.vue'
-
-createApp(App).mount('#app')
+import { createApp } from 'vue';
+import pingWidget from 'ping-widget';
+import App from './App.vue';
+const app = createApp(App);
+// 全局引入 也支持组件按需引入
+app.use(pingWidget).mount('#app');

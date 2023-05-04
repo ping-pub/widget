@@ -9,15 +9,17 @@ export default defineConfig({
   plugins: [vue(), cssInjectedByJsPlugin()],
   build: {
     lib: {
-      // Could also be a dictionary or array of multiple entry points
       entry: resolve(__dirname, 'lib/main.ts'),
-      name: 'ping-widget',
-      // the proper extensions will be added
-      fileName: 'ping-widget',
+      name: 'PingWidgetTest',
+      fileName: 'ping-widget-test',
     },
     rollupOptions: {
+      external: ['vue'],
       output: {
         manualChunks: undefined,
+        globals: {
+          vue: 'Vue',
+        },
       },
     },
   },

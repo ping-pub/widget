@@ -13,7 +13,10 @@
     <div class="modal">
       <div class="modal-box">
         <h3 class="font-bold text-lg">Congratulations random Internet user!</h3>
-        <p class="py-4">You've been selected for a chance to get one year of subscription to use Wikipedia for free!</p>
+        <p class="py-4">
+          You've been selected for a chance to get one year of subscription to
+          use Wikipedia for free!
+        </p>
         <div class="modal-action">
           <label for="my-modal" class="btn">Yay!</label>
         </div>
@@ -21,12 +24,23 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 // @ts-nocheck
-import { defineProps } from 'vue';
-
 defineProps({
   msg: String,
+});
+</script>
+<script lang="ts">
+import type { ExtractPropTypes } from 'vue';
+import { defineComponent } from 'Vue';
+
+const helloPingProps = () => ({
+  msg: 'This is Test cpp',
+});
+export type HelloPingProps = Partial<ExtractPropTypes<typeof helloPingProps>>;
+export default defineComponent<HelloPingProps>({
+  name: 'HelloPing',
+  prop: helloPingProps(),
+  // setup(props, { slots, emit, expose }) {},
 });
 </script>

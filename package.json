@@ -1,9 +1,9 @@
 {
   "name": "ping-widget",
   "private": false,
-  "version": "0.0.2",
-  "type": "module",
-  "main": "dist/ping-widget.js",
+  "version": "0.0.21",
+  "main": "./dist/ping-widget-test.umd.js",
+  "module": "./dist/ping-widget-test.mjs",
   "author": {
     "name": "Alisa | Side Protocol",
     "email": "alisa@side.one"
@@ -25,10 +25,20 @@
     "Side Protocol",
     "Ping.pub"
   ],
+  "files": [
+    "dist/*"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc && vite build",
     "preview": "vite preview"
+  },
+  "exports": {
+    "./lib/main.css": "./lib/main.css",
+    ".": {
+      "import": "./dist/ping-widget-test.mjs",
+      "require": "./dist/ping-widget-test.umd.js"
+    }
   },
   "dependencies": {
     "daisyui": "^2.51.6",
