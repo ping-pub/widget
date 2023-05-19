@@ -2,15 +2,15 @@
 import { onMounted, ref } from 'vue';
 import pingWidget from '../lib/main';
 
-const sender = 'stars1m8mma95ta2zajqtmfp5c5y3wgeyqzcrc2k82es';
-const endpoint = 'https://rest.stargaze-apis.com';
+const sender = 'evmos1a22spreqspsh9s3v67ctsuzaf9n4kalllspvr5';
+const endpoint = 'https://evmos-api.polkachu.com';
 const chainId = 'stargaze-1';
 const hdPath = "m/44'/118/0'/0/0";
-const chain_name = 'stargaze'
+const chain_name = 'evmos'
 
 const params = JSON.stringify({
     proposal_id: '1',
-    validator_address: 'starsvaloper1jxv0u20scum4trha72c7ltfgfqef6nscdghxyx',
+    validator_address: 'evmosvaloper1a22spreqspsh9s3v67ctsuzaf9n4kallj7wuzf',
     chain_name,
 });
 

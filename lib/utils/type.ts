@@ -1,3 +1,5 @@
+import { EncodeObject } from '@cosmjs/proto-signing';
+import { SignerData, StdFee } from '@cosmjs/stargate';
 import type { App, Plugin } from 'vue';
 export const withInstall = <T>(comp: T) => {
   const c = comp as any;
@@ -37,4 +39,13 @@ export interface TxResponse {
   code: 0,
   data: string,
   raw_log: string,
+}
+
+export interface Transaction { 
+  chainId: string; 
+  signerAddress: string; 
+  messages: readonly EncodeObject[]; 
+  fee: StdFee; 
+  memo: string; 
+  signerData: SignerData 
 }

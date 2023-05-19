@@ -1,46 +1,14 @@
 import { fromBase64, fromBech32, toHex, toBase64 } from "@cosmjs/encoding";
-import { SignerData, StdFee,  } from '@cosmjs/stargate'
-import { EncodeObject,   
-    encodePubkey,
-    GeneratedType,
-    isOfflineDirectSigner,
-    makeAuthInfoBytes,
-    makeSignDoc,
-    OfflineSigner,OfflineDirectSigner,
-    Registry,
-    TxBodyEncodeObject,} from '@cosmjs/proto-signing'
-import { sha256, stringToPath } from '@cosmjs/crypto'
-import { encodeSecp256k1Pubkey, makeSignDoc as makeSignDocAmino } from "@cosmjs/amino";
-import {
-    MsgDelegateEncodeObject,
-    MsgSendEncodeObject,
-    MsgTransferEncodeObject,
-    MsgUndelegateEncodeObject,
-    MsgWithdrawDelegatorRewardEncodeObject,
-    defaultRegistryTypes
-  } from "@cosmjs/stargate";
-// ledger
-import {
-    GetTxRequest,
-    GetTxResponse,
-    ServiceClientImpl,
-    SimulateRequest,
-    SimulateResponse,
-  } from "cosmjs-types/cosmos/tx/v1beta1/service";
-import TransportWebBLE from '@ledgerhq/hw-transport-web-ble'
-import TransportWebUSB from '@ledgerhq/hw-transport-webusb'
-import CosmosApp from 'ledger-cosmos-js'
-import { LedgerSigner } from '@cosmjs/ledger-amino'
-import { ethToEvmos } from '@tharsis/address-converter'
+import { EncodeObject, encodePubkey, Registry } from '@cosmjs/proto-signing'
+import { encodeSecp256k1Pubkey } from "@cosmjs/amino";
+import { defaultRegistryTypes } from "@cosmjs/stargate";
 import { AuthInfo, Fee, Tx, TxBody, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { SignMode } from "cosmjs-types/cosmos/tx/signing/v1beta1/signing";
-import { Any } from "cosmjs-types/google/protobuf/any";
 import { AbstractWallet, WalletArgument, WalletName, createWallet } from "./Wallet";
 import { post } from "../utils/http";
-import { TxResponse } from "../utils/type";
-import { PubKey } from 'cosmjs-types/cosmos/crypto/secp256k1/keys'
+import { Transaction, TxResponse } from "../utils/type";
 
-function isEthermint(chainId: string) {
+export function isEthermint(chainId: string) {
   return chainId.search(/\w+_\d+-\d+/g) > -1
 }
 
@@ -49,45 +17,15 @@ export class UniClient {
     wallet: AbstractWallet
     constructor(name: WalletName, arg: WalletArgument) {
         this.registry = new Registry(defaultRegistryTypes)
-        this.wallet = createWallet(name, arg)
+        this.wallet = createWallet(name, arg, this.registry)
     }
 
     async getAccounts() {
         return this.wallet.getAccounts()
     }
 
-    async sign(transaction: { chainId: string; signerAddress: string; messages: readonly EncodeObject[]; fee: StdFee; memo: string; signerData: SignerData }): Promise<TxRaw> {
-        const accouts = await this.getAccounts()
-        const hex = toHex(fromBech32(transaction.signerAddress).data)
-        const accountFromSigner = accouts.find((account) => toHex(fromBech32(account.address).data) === hex);
-        if (!accountFromSigner) {
-            throw new Error("Failed to retrieve account from signer");
-        }
-        const pubkey = isEthermint(transaction.chainId) ? Any.fromPartial({
-          typeUrl: '/ethermint.crypto.v1.ethsecp256k1.PubKey',
-          value: PubKey.encode({
-            key: accountFromSigner.pubkey,
-          }).finish(),
-        }) : encodePubkey(encodeSecp256k1Pubkey(accountFromSigner.pubkey));
-        const txBodyEncodeObject: TxBodyEncodeObject = {
-            typeUrl: "/cosmos.tx.v1beta1.TxBody",
-            value: {
-                messages: transaction.messages,
-                memo: transaction.memo,
-            },
-        };
-        const txBodyBytes = this.registry.encode(txBodyEncodeObject);
-        const gasLimit = Number(transaction.fee.gas);
-        const authInfoBytes = makeAuthInfoBytes(
-            [{ pubkey, sequence: transaction.signerData.sequence }],
-            transaction.fee.amount,
-            gasLimit,
-            transaction.fee.granter,
-            transaction.fee.payer,
-        );
-        const signDoc = makeSignDoc(txBodyBytes, authInfoBytes, transaction.chainId, transaction.signerData.accountNumber);
-        
-        const { signature, signed } = await this.wallet.sign(transaction.signerAddress, signDoc);
+    async sign(transaction: Transaction): Promise<TxRaw> {
+        const { signature, signed } = await this.wallet.sign(transaction);
         return TxRaw.fromPartial({
             bodyBytes: signed.bodyBytes,
             authInfoBytes: signed.authInfoBytes,
@@ -135,41 +73,41 @@ export class UniClient {
         return await post(url, request);
     }
 
-    async simulate2(
-        endpoint: string, 
-        messages: readonly EncodeObject[],
-        memo: string | undefined,
-        sequence: number
-    ) {
+    // async simulate2(
+    //     endpoint: string, 
+    //     messages: readonly EncodeObject[],
+    //     memo: string | undefined,
+    //     sequence: number
+    // ) {
         
-        const [first] = await this.wallet.getAccounts()
-        const pubkey = encodeSecp256k1Pubkey(first.pubkey);
-        const anyMsgs = messages.map((m) => this.registry.encodeAsAny(m));
-        const url = `${endpoint}/cosmos/tx/v1beta1/simulate`
-        const tx = Tx.fromPartial({
-            authInfo: AuthInfo.fromPartial({
-              fee: Fee.fromPartial({}),
-              signerInfos: [
-                {
-                  publicKey: encodePubkey(pubkey),
-                  sequence: sequence,
-                  modeInfo: { single: { mode: SignMode.SIGN_MODE_UNSPECIFIED } },
-                },
-              ],
-            }),
-            body: TxBody.fromPartial({
-              messages: Array.from(anyMsgs),
-              memo: memo,
-            }),
-            signatures: [new Uint8Array()],
-          });
-        const request = SimulateRequest.fromPartial({
-            tx
-            // txBytes: Tx.encode(tx).finish(),
-        });
-        console.log(tx, request)
-        return await post(url, request)
-    }
+    //     const [first] = await this.wallet.getAccounts()
+    //     const pubkey = encodeSecp256k1Pubkey(first.pubkey);
+    //     const anyMsgs = messages.map((m) => this.registry.encodeAsAny(m));
+    //     const url = `${endpoint}/cosmos/tx/v1beta1/simulate`
+    //     const tx = Tx.fromPartial({
+    //         authInfo: AuthInfo.fromPartial({
+    //           fee: Fee.fromPartial({}),
+    //           signerInfos: [
+    //             {
+    //               publicKey: encodePubkey(pubkey),
+    //               sequence: sequence,
+    //               modeInfo: { single: { mode: SignMode.SIGN_MODE_UNSPECIFIED } },
+    //             },
+    //           ],
+    //         }),
+    //         body: TxBody.fromPartial({
+    //           messages: Array.from(anyMsgs),
+    //           memo: memo,
+    //         }),
+    //         signatures: [new Uint8Array()],
+    //       });
+    //     const request = SimulateRequest.fromPartial({
+    //         tx
+    //         // txBytes: Tx.encode(tx).finish(),
+    //     });
+    //     console.log(tx, request)
+    //     return await post(url, request)
+    // }
 
 
   async broadcastTx(endpoint, bodyBytes: TxRaw) : Promise<{tx_response: TxResponse}> {
