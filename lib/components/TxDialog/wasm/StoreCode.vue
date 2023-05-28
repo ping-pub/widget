@@ -64,7 +64,7 @@ defineExpose({msgs, isValid, initial})
             <label class="label">
                 <span class="label-text">Sender</span>
             </label>
-            <input :value="sender" type="text" class="input input-bordered" />
+            <input :value="sender" type="text" class="text-gray-600 dark:text-white input border !border-gray-300 dark:!border-gray-600" />
         </div>
         <div class="form-control">
             <label class="label">
@@ -80,7 +80,7 @@ defineExpose({msgs, isValid, initial})
             <label class="label">
                 <span class="label-text">Addresses</span>
             </label>
-            <input v-model="addresses" type="text" placeholder="use ',' for addresses" class="input input-bordered" />
+            <input v-model="addresses" type="text" placeholder="use ',' for addresses" class="input border border-gray-300 dark:border-gray-600" />
         </div>
         <div class="form-control">
             <label class="label">

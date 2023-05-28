@@ -69,19 +69,19 @@ defineExpose({msgs, isValid, initial})
             <label class="label">
                 <span class="label-text">Sender</span>
             </label>
-            <input :value="sender" type="text" class="input input-bordered" />
+            <input :value="sender" type="text" class="text-gray-600 dark:text-white input border !border-gray-300 dark:!border-gray-600" />
         </div>
         <div class="form-control">
             <label class="label">
                 <span class="label-text">Admin</span>
             </label>
-            <input v-model="admin" type="text" class="input input-bordered" />
+            <input v-model="admin" type="text" class="text-gray-600 dark:text-white input border !border-gray-300 dark:!border-gray-600" />
         </div>
         <div class="form-control">
             <label class="label">
                 <span class="label-text">Label</span>
             </label>
-            <input v-model="label" type="text" class="input input-bordered" />
+            <input v-model="label" type="text" class="input border border-gray-300 dark:border-gray-600" />
         </div>
         <div class="form-control">
             <label class="label">
@@ -98,8 +98,8 @@ defineExpose({msgs, isValid, initial})
                 </span>
             </label>
             <label v-for="(coin, i) in funds" class="input-group" :key="i">
-                <input v-model="coin.amount" type="number" placeholder="0" class="input input-bordered w-full" />
-                <select v-model="coin.denom" class="select input-bordered">
+                <input v-model="coin.amount" type="number" placeholder="0" class="input border border-gray-300 dark:border-gray-600 w-full" />
+                <select v-model="coin.denom" class="select border border-gray-300 dark:border-gray-600">
                     <option v-for="b in balances" :value="b.denom">{{ b.denom.substring(0, 10) }}</option>
                 </select>
             </label>

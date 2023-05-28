@@ -10,8 +10,21 @@ import {
     IBCInfo,
     IBCPath,
 } from '@ping-pub/chain-registry-client/dist/types';
-import { getBalance, getStakingParam, getOsmosisPools, getLatestBlock, getAccount } from '../../utils/http';
-import { Account, ConnectedWallet, WalletName, createWallet, readWallet, writeWallet } from '../../wallet/Wallet';
+import {
+    getBalance,
+    getStakingParam,
+    getOsmosisPools,
+    getLatestBlock,
+    getAccount,
+} from '../../utils/http';
+import {
+    Account,
+    ConnectedWallet,
+    WalletName,
+    createWallet,
+    readWallet,
+    writeWallet,
+} from '../../wallet/Wallet';
 import { Coin } from '../../utils/type';
 import { osmosis, ibc, getSigningOsmosisClient } from 'osmojs';
 import { tokens, type TokenConfig } from './tokens';
@@ -29,10 +42,10 @@ const OSMOSIS_RPC = 'https://rpc.osmosis.zone';
 const OSMOSIS_REST = 'https://lcd.osmosis.zone';
 const DEFAULT_HDPATH = "m/44'/118/0'/0/0";
 
-const view = ref("connect") // [connect, swap, deposit, withdraw]
+const view = ref('connect'); // [connect, swap, deposit, withdraw]
 
 function switchView(v: string) {
-    view.value = v
+    view.value = v;
 }
 
 // variables
@@ -51,47 +64,52 @@ const localChainInfo = ref({} as Chain);
 const localCoinInfo = ref([] as Asset[]);
 const swapIn = ref({} as TokenConfig | undefined);
 const swapOut = ref({} as TokenConfig | undefined);
-const amountIn = ref("");
+const amountIn = ref('');
 const allPools = ref([] as any[]);
 const client = new ChainRegistryClient();
 
 // swap logic
 
 async function initData() {
-    error.value = '' //reset error
-    sender.value = readWallet(props.hdPath)
-    if(!sender.value.cosmosAddress) {
-       view.value = 'connect'
-       return
-    } 
-    if (open.value ) {
-        view.value = 'swap'
-        localChainInfo.value = {} as Chain
-        localCoinInfo.value = []
-        await client.fetchChainInfo(props.chainName).then(res => {
-            localChainInfo.value = res
-            if(Number(res.slip44) !== 118) {
-                error.value === `Coin type ${res.slip44} is not supported`
-            }
-        }).catch(() => {
-            error.value = "Not found IBC Path"
-        })
+    error.value = ''; //reset error
+    sender.value = readWallet(props.hdPath);
+    if (!sender.value.cosmosAddress) {
+        view.value = 'connect';
+        return;
+    }
+    if (open.value) {
+        view.value = 'swap';
+        localChainInfo.value = {} as Chain;
+        localCoinInfo.value = [];
+        await client
+            .fetchChainInfo(props.chainName)
+            .then((res) => {
+                localChainInfo.value = res;
+                if (Number(res.slip44) !== 118) {
+                    error.value === `Coin type ${res.slip44} is not supported`;
+                }
+            })
+            .catch(() => {
+                error.value = 'Not found IBC Path';
+            });
         getBalance(OSMOSIS_REST, osmoAddress(sender.value.cosmosAddress)).then(
             (res) => {
                 osmoBalances.value = res.balances.filter(
                     (x) => !x.denom.startsWith('gamm')
                 );
-            })
-        getBalance(props.endpoint, localAddress(sender.value.cosmosAddress)).then(
-            (res) => {
-                localBalances.value = res.balances;
             }
         );
+        getBalance(
+            props.endpoint,
+            localAddress(sender.value.cosmosAddress)
+        ).then((res) => {
+            localBalances.value = res.balances;
+        });
 
         client.fetchAssetsList(props.chainName).then((al) => {
             localCoinInfo.value = al.assets;
         });
-        
+
         getStakingParam(props.endpoint).then((x) => {
             defaultDenom.value = x.params.bond_denom;
         });
@@ -117,15 +135,15 @@ async function initData() {
 }
 
 function osmoAddress(addr?: string) {
-    if(!addr) return ""
+    if (!addr) return '';
     const { data } = fromBech32(addr);
     return toBech32('osmo', data);
 }
 
 function localAddress(addr?: string) {
-    if(!addr) return ""
+    if (!addr) return '';
     const { data } = fromBech32(addr);
-    const prefix = localChainInfo.value?.bech32_prefix || "cosmos"
+    const prefix = localChainInfo.value?.bech32_prefix || 'cosmos';
     return toBech32(prefix, data);
 }
 
@@ -176,16 +194,14 @@ const localTokenOnOsmosis = computed(() => {
             )
         )
     ).toUpperCase();
-    return localCoinInfo.value?.map((localCoin) => (
-        {
-            denom: defaultDenom.value,
-            symbol: localCoin.symbol || '',
-            ibcDenom: `ibc/${ibcDenom}`,
-            sourceChannelId: channelId,
-            decimals: findlocalCoinDecimal(defaultDenom.value),
-            coinImageUrl: findTokenUrl(localCoin),
-        })
-    );
+    return localCoinInfo.value?.map((localCoin) => ({
+        denom: defaultDenom.value,
+        symbol: localCoin.symbol || '',
+        ibcDenom: `ibc/${ibcDenom}`,
+        sourceChannelId: channelId,
+        decimals: findlocalCoinDecimal(defaultDenom.value),
+        coinImageUrl: findTokenUrl(localCoin),
+    }));
 });
 
 const localSourceChannelID = computed(() => {
@@ -196,16 +212,24 @@ const localSourceChannelID = computed(() => {
         osmosisPathInfo.value.chain_1?.chain_name === 'osmosis'
             ? channel?.chain_2.channel_id
             : channel?.chain_1.channel_id;
-    return channelId
+    return channelId;
 });
 
 const withdrawable = computed(() => {
-    return localTokenOnOsmosis.value.findIndex(x => x.denom === swapOut.value?.denom) > -1
-})
+    return (
+        localTokenOnOsmosis.value.findIndex(
+            (x) => x.denom === swapOut.value?.denom
+        ) > -1
+    );
+});
 
 const depositable = computed(() => {
-    return localTokenOnOsmosis.value.findIndex(x => x.denom === swapIn.value?.denom) > -1
-})
+    return (
+        localTokenOnOsmosis.value.findIndex(
+            (x) => x.denom === swapIn.value?.denom
+        ) > -1
+    );
+});
 
 const inTokens = computed(() => {
     if (direction.value === 'buy') {
@@ -228,13 +252,13 @@ const outTokens = computed(() => {
 });
 
 function selectInput(v) {
-    swapIn.value = v
-    amountIn.value = ""
+    swapIn.value = v;
+    amountIn.value = '';
 }
 
 function selectOutput(v) {
-    swapOut.value = v
-    amountIn.value = ""
+    swapOut.value = v;
+    amountIn.value = '';
 }
 
 const pool = computed(() => {
@@ -265,15 +289,15 @@ function switchDirection() {
 }
 
 const disabled = computed(() => {
-    const amount = Number(amountIn.value || 0)
-    if(amount <= 0 || outAmount.value <= 0 ) return true
-    const token = swapIn.value
+    const amount = Number(amountIn.value || 0);
+    if (amount <= 0 || outAmount.value <= 0) return true;
+    const token = swapIn.value;
     const b = osmoBalances.value.find((x) => x.denom === token?.ibcDenom || '');
-    if(b && token) {
-        return Number(b.amount) < amount * (10 ** token.decimals)
+    if (b && token) {
+        return Number(b.amount) < amount * 10 ** token.decimals;
     }
-    return true
-})
+    return true;
+});
 
 const outAmount = computed(() => {
     // tokenBalanceOut * [1 - { tokenBalanceIn / (tokenBalanceIn + (1 - swapFee) * tokenAmountIn)} ^ (tokenWeightIn / tokenWeightOut)]
@@ -303,115 +327,135 @@ const outAmount = computed(() => {
 });
 
 async function doSwap() {
-    sending.value = true
-    const latest = await getLatestBlock(OSMOSIS_REST)
+    sending.value = true;
+    const latest = await getLatestBlock(OSMOSIS_REST);
 
     const stargateClient = await getSigningOsmosisClient({
         rpcEndpoint: OSMOSIS_RPC,
         // @ts-ignore
-        signer: window.getOfflineSigner(latest.block.header.chain_id)
-    })
-    const address = osmoAddress(sender.value.cosmosAddress)
+        signer: window.getOfflineSigner(latest.block.header.chain_id),
+    });
+    const address = osmoAddress(sender.value.cosmosAddress);
 
-    if(!swapIn.value || !swapOut.value || !address) return
-    const { swapExactAmountIn } = osmosis.gamm.v1beta1.MessageComposer.withTypeUrl;
+    if (!swapIn.value || !swapOut.value || !address) return;
+    const { swapExactAmountIn } =
+        osmosis.gamm.v1beta1.MessageComposer.withTypeUrl;
 
-    
-    const amount = Number(amountIn.value || 0)
+    const amount = Number(amountIn.value || 0);
     const msg = swapExactAmountIn({
         sender: address,
-        routes: [{
-            poolId: Long.fromNumber(pool.value.id), 
-            tokenOutDenom: swapOut.value.ibcDenom
-        }],
+        routes: [
+            {
+                poolId: Long.fromNumber(pool.value.id),
+                tokenOutDenom: swapOut.value.ibcDenom,
+            },
+        ],
         tokenIn: {
             amount: (amount * 10 ** swapIn.value.decimals).toFixed(),
-            denom: swapIn.value.ibcDenom 
+            denom: swapIn.value.ibcDenom,
         },
-        tokenOutMinAmount: ((outAmount.value * 0.99) * 10 ** swapOut.value.decimals).toFixed() // slippage: 1% 
+        tokenOutMinAmount: (
+            outAmount.value *
+            0.99 *
+            10 ** swapOut.value.decimals
+        ).toFixed(), // slippage: 1%
     });
 
-    const gas = await stargateClient.simulate(address, [msg], "")
+    const gas = await stargateClient.simulate(address, [msg], '');
 
     const fee: StdFee = {
-        amount: [{
-            denom: 'uosmo',
-            amount: '864'
-        }],
-        gas: (gas * 1.25).toFixed()
+        amount: [
+            {
+                denom: 'uosmo',
+                amount: '864',
+            },
+        ],
+        gas: (gas * 1.25).toFixed(),
     };
-    const response = await stargateClient.signAndBroadcast(address, [msg], fee, "Convert on ping.pub");
-    console.log(response.code)
-    if(response.code === 0) {
-        await getBalance(OSMOSIS_REST, osmoAddress(sender.value.cosmosAddress)).then(
-            (res) => {
-                osmoBalances.value = res.balances.filter(
-                    (x) => !x.denom.startsWith('gamm')
-                );
-            })
+    const response = await stargateClient.signAndBroadcast(
+        address,
+        [msg],
+        fee,
+        'Convert on ping.pub'
+    );
+    console.log(response.code);
+    if (response.code === 0) {
+        await getBalance(
+            OSMOSIS_REST,
+            osmoAddress(sender.value.cosmosAddress)
+        ).then((res) => {
+            osmoBalances.value = res.balances.filter(
+                (x) => !x.denom.startsWith('gamm')
+            );
+        });
     } else {
-        if(response.rawLog) error.value = response.rawLog
+        if (response.rawLog) error.value = response.rawLog;
     }
-    sending.value = false
+    sending.value = false;
 }
 
 // deposit logic
-const depositAmount = ref("")
+const depositAmount = ref('');
 
-function showLocalBalance(denom = "", decimals = 0) {
-    const b = localBalances.value?.find(x => x.denom === denom)
-    if(b){
-        return Number(b.amount) / 10 ** decimals
+function showLocalBalance(denom = '', decimals = 0) {
+    const b = localBalances.value?.find((x) => x.denom === denom);
+    if (b) {
+        return Number(b.amount) / 10 ** decimals;
     }
-    return 0
+    return 0;
 }
 const disableDeposit = computed(() => {
-    const token = swapIn.value
-    if(token) {
-        const b = localBalances.value?.find(x => x.denom === token.denom)
-        if(b){
-            const amount = Number(depositAmount.value || 0)
-            return amount <=0 || Number(b.amount) < amount * 10 ** token.decimals
+    const token = swapIn.value;
+    if (token) {
+        const b = localBalances.value?.find((x) => x.denom === token.denom);
+        if (b) {
+            const amount = Number(depositAmount.value || 0);
+            return (
+                amount <= 0 || Number(b.amount) < amount * 10 ** token.decimals
+            );
         }
     }
-    return true
-})
+    return true;
+});
 
 async function doDeposit() {
-    sending.value = true
+    sending.value = true;
 
-    const address = localAddress(sender.value.cosmosAddress)
+    const address = localAddress(sender.value.cosmosAddress);
 
-    if(!swapIn.value || !address) return
+    if (!swapIn.value || !address) return;
 
-    const latest = await getLatestBlock(props.endpoint)
-    const acc = await getAccount(props.endpoint, address)
+    const latest = await getLatestBlock(props.endpoint);
+    const acc = await getAccount(props.endpoint, address);
 
-    const chainId = latest.block.header.chain_id
-    const timeout = Date.now() + new Date().getTimezoneOffset() + 3600000
-    const amount = Number(depositAmount.value || 0) * 10 ** swapIn.value.decimals
+    const chainId = latest.block.header.chain_id;
+    const timeout = Date.now() + new Date().getTimezoneOffset() + 3600000;
+    const amount =
+        Number(depositAmount.value || 0) * 10 ** swapIn.value.decimals;
     const tx = {
         chainId,
         signerAddress: address,
-        messages: [{
-            typeUrl: '/ibc.applications.transfer.v1.MsgTransfer',
-            value: {
-                sourcePort: 'transfer',
-                sourceChannel: localSourceChannelID.value || "",
-                token: {
-                    amount: String(amount),
-                    denom: swapIn.value.denom
+        messages: [
+            {
+                typeUrl: '/ibc.applications.transfer.v1.MsgTransfer',
+                value: {
+                    sourcePort: 'transfer',
+                    sourceChannel: localSourceChannelID.value || '',
+                    token: {
+                        amount: String(amount),
+                        denom: swapIn.value.denom,
+                    },
+                    sender: address,
+                    receiver: osmoAddress(address),
+                    timeoutTimestamp: `${timeout}000000`,
                 },
-                sender: address,
-                receiver: osmoAddress(address),
-                timeoutTimestamp: `${timeout}000000`,
             },
-        }],
+        ],
         fee: {
             gas: '200000',
-            amount: [{ amount: "5000", denom: swapIn.value.denom }],
+            amount: [{ amount: '5000', denom: swapIn.value.denom }],
         },
-        memo: "",
+        memo: '',
         signerData: {
             accountNumber: Number(acc.account.account_number),
             sequence: Number(acc.account.sequence),
@@ -420,24 +464,27 @@ async function doDeposit() {
     };
 
     try {
-        const client = new UniClient(WalletName.Keplr, {chainId,});
+        const client = new UniClient(WalletName.Keplr, { chainId });
 
         //   console.log("gasInfo:", gasInfo)
         const txRaw = await client.sign(tx);
         const response = await client.broadcastTx(props.endpoint, txRaw);
-        if(response.tx_response?.code === 0) {
+        if (response.tx_response?.code === 0) {
             setTimeout(async () => {
-                await getBalance(OSMOSIS_REST, osmoAddress(sender.value.cosmosAddress)).then(
-                (res) => {
+                await getBalance(
+                    OSMOSIS_REST,
+                    osmoAddress(sender.value.cosmosAddress)
+                ).then((res) => {
                     osmoBalances.value = res.balances.filter(
                         (x) => !x.denom.startsWith('gamm')
                     );
-                })
-                await getBalance(props.endpoint, localAddress(sender.value.cosmosAddress)).then(
-                    (res) => {
-                        localBalances.value = res.balances;
-                    }
-                );
+                });
+                await getBalance(
+                    props.endpoint,
+                    localAddress(sender.value.cosmosAddress)
+                ).then((res) => {
+                    localBalances.value = res.balances;
+                });
             }, 6000);
         }
     } catch (e) {
@@ -445,45 +492,48 @@ async function doDeposit() {
         error.value = e;
         setTimeout(() => (error.value = ''), 5000);
     }
-    sending.value = false
+    sending.value = false;
 }
 
 // withdraw logic
-const withdrawAmount = ref("")
+const withdrawAmount = ref('');
 const disableWithdraw = computed(() => {
-    const token = swapOut.value
-    if(token) {
-        const b = osmoBalances.value?.find(x => x.denom === token.ibcDenom)
-        if(b){
-            const amount = Number(withdrawAmount.value || 0)
-            return amount <=0 || Number(b.amount) < amount * 10 ** token.decimals
+    const token = swapOut.value;
+    if (token) {
+        const b = osmoBalances.value?.find((x) => x.denom === token.ibcDenom);
+        if (b) {
+            const amount = Number(withdrawAmount.value || 0);
+            return (
+                amount <= 0 || Number(b.amount) < amount * 10 ** token.decimals
+            );
         }
     }
-    return true
-})
+    return true;
+});
 async function doWithdraw() {
-    sending.value = true
-    const latest = await getLatestBlock(OSMOSIS_REST)
+    sending.value = true;
+    const latest = await getLatestBlock(OSMOSIS_REST);
 
     const stargateClient = await getSigningOsmosisClient({
         rpcEndpoint: OSMOSIS_RPC,
         // @ts-ignore
-        signer: window.getOfflineSigner(latest.block.header.chain_id)
-    })
-    const address = osmoAddress(sender.value.cosmosAddress)
+        signer: window.getOfflineSigner(latest.block.header.chain_id),
+    });
+    const address = osmoAddress(sender.value.cosmosAddress);
 
-    if(!swapIn.value || !swapOut.value || !address) return
+    if (!swapIn.value || !swapOut.value || !address) return;
 
-    const timeout = Date.now() + new Date().getTimezoneOffset() + 3600000
-    const amount = Number(withdrawAmount.value || 0)
-    const { transfer } = ibc.applications.transfer.v1.MessageComposer.withTypeUrl
+    const timeout = Date.now() + new Date().getTimezoneOffset() + 3600000;
+    const amount = Number(withdrawAmount.value || 0);
+    const { transfer } =
+        ibc.applications.transfer.v1.MessageComposer.withTypeUrl;
     const msg = transfer({
         sender: address,
-        sourceChannel: swapOut.value.sourceChannelId || "",
+        sourceChannel: swapOut.value.sourceChannelId || '',
         sourcePort: 'transfer',
         token: {
             amount: (amount * 10 ** swapOut.value.decimals).toFixed(),
-            denom: swapOut.value.ibcDenom
+            denom: swapOut.value.ibcDenom,
         },
         receiver: localAddress(sender.value.cosmosAddress),
         timeoutTimestamp: Long.fromString(`${timeout}000000`),
@@ -491,44 +541,52 @@ async function doWithdraw() {
             revisionHeight: Long.fromNumber(0),
             revisionNumber: Long.fromNumber(0),
         },
-        memo: ''
+        memo: '',
     });
 
-    const gas = await stargateClient.simulate(address, [msg], "")
+    const gas = await stargateClient.simulate(address, [msg], '');
 
     const fee: StdFee = {
         amount: [
-        {
-            denom: 'uosmo',
-            amount: '1864'
-        }
+            {
+                denom: 'uosmo',
+                amount: '1864',
+            },
         ],
-        gas: (gas * 1.25).toFixed()
+        gas: (gas * 1.25).toFixed(),
     };
-    const response = await stargateClient.signAndBroadcast(address, [msg], fee, "Convert on ping.pub");
-    if(response.code === 0) {
-        await getBalance(OSMOSIS_REST, osmoAddress(sender.value.cosmosAddress)).then(
-            (res) => {
-                osmoBalances.value = res.balances.filter(
-                    (x) => !x.denom.startsWith('gamm')
-                );
-            })
-        await getBalance(props.endpoint, localAddress(sender.value.cosmosAddress)).then(
-            (res) => {
-                localBalances.value = res.balances;
-            }
-        );
+    const response = await stargateClient.signAndBroadcast(
+        address,
+        [msg],
+        fee,
+        'Convert on ping.pub'
+    );
+    if (response.code === 0) {
+        await getBalance(
+            OSMOSIS_REST,
+            osmoAddress(sender.value.cosmosAddress)
+        ).then((res) => {
+            osmoBalances.value = res.balances.filter(
+                (x) => !x.denom.startsWith('gamm')
+            );
+        });
+        await getBalance(
+            props.endpoint,
+            localAddress(sender.value.cosmosAddress)
+        ).then((res) => {
+            localBalances.value = res.balances;
+        });
     } else {
-        if(response.rawLog) error.value = response.rawLog
+        if (response.rawLog) error.value = response.rawLog;
     }
-    sending.value = false
+    sending.value = false;
 }
 
 async function connect() {
     sending.value = true;
     let accounts = [] as Account[];
     try {
-        const latest = await getLatestBlock(props.endpoint)
+        const latest = await getLatestBlock(props.endpoint);
         const wa = createWallet(WalletName.Keplr, {
             chainId: latest.block.header.chain_id,
             hdPath: props.hdPath || DEFAULT_HDPATH,
@@ -544,19 +602,18 @@ async function connect() {
                         cosmosAddress: first.address,
                         hdPath: props.hdPath || DEFAULT_HDPATH,
                     };
-                    writeWallet(connected, props.hdPath || DEFAULT_HDPATH)
+                    writeWallet(connected, props.hdPath || DEFAULT_HDPATH);
                 }
             })
             .catch((e) => {
                 error.value = e;
             });
-        initData()
+        initData();
     } catch (e) {
         error.value = e.message;
     }
     sending.value = false;
 }
-
 </script>
 <template>
     <div>
@@ -570,13 +627,30 @@ async function connect() {
         />
 
         <label for="PingTokenConvert" class="modal cursor-pointer">
-            <label class="modal-box dark:bg-[#2a2a3a] relative rounded-lg" for="">
+            <label class="modal-box dark:bg-[#2a2a3a] rounded-lg" for="">
                 <div v-show="view === 'swap'">
-                    <div class="absolute right-4 top-4 dropdown dropdown-end dropdown-hover">
+                    <div
+                        class="absolute right-4 top-4 dropdown dropdown-end dropdown-hover"
+                    >
                         <label tabindex="0" class="text-info">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="w-6 h-6 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                class="w-6 h-6 stroke-current"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                ></path>
+                            </svg>
                         </label>
-                        <div tabindex="0" class="card compact dropdown-content dark:bg-info-content bg-slate-300 shadow rounded-box w-64">
+                        <div
+                            tabindex="0"
+                            class="card compact dropdown-content dark:bg-info-content bg-slate-300 shadow rounded-box w-64"
+                        >
                             <div class="card-body">
                                 <ul class="text-right">
                                     <li>Liquidity is provided by Osmosis</li>
@@ -586,8 +660,15 @@ async function connect() {
                         </div>
                     </div>
                     <h3 class="text-xl font-semibold">Token Convert</h3>
-                    <div v-if="!osmosisPath || chainName === 'osmosis'" class="text-error mt-3">
-                        <span>This feature is not available [{{ chainName }}]</span>
+                    <div
+                        v-if="!osmosisPath || chainName === 'osmosis'"
+                        class="text-error mt-3"
+                    >
+                        <span
+                            >This feature is not available [{{
+                                chainName
+                            }}]</span
+                        >
                     </div>
                     <div
                         class="flex items-center relative h-14 bg-gray-100 dark:bg-[#232333] rounded-tl-lg rounded-tr-lg mt-4"
@@ -651,9 +732,16 @@ async function connect() {
                     >
                         <div class="mr-3 text-sm">Balance:</div>
                         <div class="text-base font-semibold">
-                            {{ showBalance(swapIn?.ibcDenom, swapIn?.decimals) }}
+                            {{
+                                showBalance(swapIn?.ibcDenom, swapIn?.decimals)
+                            }}
                         </div>
-                        <Icon v-if="depositable" icon="mdi:plus-box-outline" class="ml-2" @click="switchView('deposit')"/>
+                        <Icon
+                            v-if="depositable"
+                            icon="mdi:plus-box-outline"
+                            class="ml-2"
+                            @click="switchView('deposit')"
+                        />
                     </div>
 
                     <!-- switch btn -->
@@ -674,10 +762,21 @@ async function connect() {
                         class="flex items-center h-14 rounded-tl-lg rounded-tr-lg bg-gray-100 dark:bg-[#232333]"
                     >
                         <div v-if="outTokens.length === 0">
-                            <span v-if="error" class="text-red-500">No tradable tokens found.</span>
-                            <button v-else class="btn btn-ghost loading">loading...</button>
+                            <span v-if="error" class="text-red-500"
+                                >No tradable tokens found.</span
+                            >
+                            <button
+                                v-else
+                                class="btn btn-ghost"
+                                :class="{ 'loading relative start-0': sending }"
+                            >
+                                loading...
+                            </button>
                         </div>
-                        <div v-if="outTokens && outTokens.length > 0" class="dropdown">
+                        <div
+                            v-if="outTokens && outTokens.length > 0"
+                            class="dropdown"
+                        >
                             <label
                                 tabindex="0"
                                 class="flex items-center h-12 px-4 cursor-pointer"
@@ -733,20 +832,38 @@ async function connect() {
                     <div
                         class="flex items-center py-2 px-4 bg-gray-200 dark:bg-[#171721] rounded-bl-lg rounded-br-lg"
                     >
-                        <div class="mr-3 text-sm dark:text-gray-400">Balance:</div>
-                        <div class="text-base font-semibold dark:text-gray-200">
-                            {{ showBalance(swapOut?.ibcDenom, swapOut?.decimals) }}
+                        <div class="mr-3 text-sm dark:text-gray-400">
+                            Balance:
                         </div>
-                        <Icon v-if="withdrawable" icon="mdi:minus-box-outline" class="ml-2" @click="switchView('withdraw')"/>
+                        <div class="text-base font-semibold dark:text-gray-200">
+                            {{
+                                showBalance(
+                                    swapOut?.ibcDenom,
+                                    swapOut?.decimals
+                                )
+                            }}
+                        </div>
+                        <Icon
+                            v-if="withdrawable"
+                            icon="mdi:minus-box-outline"
+                            class="ml-2"
+                            @click="switchView('withdraw')"
+                        />
                     </div>
 
                     <div class="px-4 mt-4">
                         <div class="flex items-center justify-between">
-                            <div class="text-sm text-gray-600 dark:text-gray-400">
+                            <div
+                                class="text-sm text-gray-600 dark:text-gray-400"
+                            >
                                 Swap Fee
                             </div>
-                            <div class="text-base text-gray-800 dark:text-gray-200">
-                                {{ decimal2percent(pool?.pool_params.swap_fee) }}%
+                            <div
+                                class="text-base text-gray-800 dark:text-gray-200"
+                            >
+                                {{
+                                    decimal2percent(pool?.pool_params.swap_fee)
+                                }}%
                             </div>
                         </div>
                     </div>
@@ -758,8 +875,8 @@ async function connect() {
                     <div class="mt-5">
                         <button
                             class="btn btn-primary w-full ping-connect-confirm capitalize text-base"
-                            :class="sending ? 'loading' : ''"
                             :disabled="disabled"
+                            :class="{ 'loading relative start-0': sending }"
                             @click="doSwap"
                         >
                             Convert
@@ -768,14 +885,30 @@ async function connect() {
                 </div>
                 <!-- deposit -->
                 <div v-show="view === 'deposit'">
-                    <h3 class="text-xl font-semibold flex"><Icon class="mt-1" icon="mdi:chevron-left" @click="switchView('swap')"></Icon> Deposit</h3>
+                    <h3 class="text-xl font-semibold flex">
+                        <Icon
+                            class="mt-1"
+                            icon="mdi:chevron-left"
+                            @click="switchView('swap')"
+                        ></Icon>
+                        Deposit
+                    </h3>
 
                     <div class="form-control">
                         <label class="label">
-                            <span class="label-text">Deposit address on Osmosis : </span>
-                            <span class="lable-text">{{ showBalance(swapIn?.ibcDenom, swapIn?.decimals) }}</span>
+                            <span class="label-text"
+                                >Deposit address on Osmosis :
+                            </span>
+                            <span class="lable-text">{{
+                                showBalance(swapIn?.ibcDenom, swapIn?.decimals)
+                            }}</span>
                         </label>
-                        <input :value="osmoAddress(sender.cosmosAddress)" readonly type="text" class="input input-bordered" />
+                        <input
+                            :value="osmoAddress(sender.cosmosAddress)"
+                            readonly
+                            type="text"
+                            class="input border border-gray-300 dark:border-gray-600"
+                        />
                     </div>
                     <div
                         class="flex items-center relative h-14 bg-gray-100 dark:bg-[#232333] rounded-tl-lg rounded-tr-lg mt-4"
@@ -804,7 +937,12 @@ async function connect() {
                         class="flex flex-row-reverse items-center py-2 px-4 bg-gray-200 dark:bg-[#171721] rounded-bl-lg rounded-br-lg"
                     >
                         <div class="text-base font-semibold">
-                            {{ showLocalBalance(swapIn?.denom, swapIn?.decimals) }}
+                            {{
+                                showLocalBalance(
+                                    swapIn?.denom,
+                                    swapIn?.decimals
+                                )
+                            }}
                         </div>
                         <div class="mr-3 text-sm">Balance:</div>
                     </div>
@@ -816,8 +954,8 @@ async function connect() {
                     <div class="mt-5">
                         <button
                             class="btn btn-primary w-full ping-connect-confirm capitalize text-base"
-                            :class="sending ? 'loading' : ''"
                             :disabled="disableDeposit"
+                            :class="{ 'loading relative start-0': sending }"
                             @click="doDeposit"
                         >
                             Deposit
@@ -827,18 +965,30 @@ async function connect() {
 
                 <!-- withdraw -->
                 <div v-show="view === 'withdraw'">
-                    <h3 class="text-xl font-semibold flex"><Icon class="mt-1" icon="mdi:chevron-left" @click="switchView('swap')"></Icon> Withdraw</h3>
+                    <h3 class="text-xl font-semibold flex">
+                        <Icon
+                            class="mt-1"
+                            icon="mdi:chevron-left"
+                            @click="switchView('swap')"
+                        ></Icon>
+                        Withdraw
+                    </h3>
 
                     <div
                         class="flex justify-between j items-center py-2 px-4 bg-gray-200 dark:bg-[#171721] rounded-tl-lg rounded-tr-lg mt-4"
                     >
                         <div class="text-sm">Withdrawable Balance:</div>
                         <div class="text-base font-semibold">
-                            {{ showBalance(swapOut?.ibcDenom, swapOut?.decimals) }}
+                            {{
+                                showBalance(
+                                    swapOut?.ibcDenom,
+                                    swapOut?.decimals
+                                )
+                            }}
                         </div>
                     </div>
                     <div
-                        class="flex items-center relative h-14 bg-gray-100 dark:bg-[#232333] rounded-bl-lg rounded-br-lg "
+                        class="flex items-center relative h-14 bg-gray-100 dark:bg-[#232333] rounded-bl-lg rounded-br-lg"
                     >
                         <label
                             tabindex="0"
@@ -862,10 +1012,23 @@ async function connect() {
 
                     <div class="form-control">
                         <label class="label">
-                            <span class="label-text">Recipient on {{ localChainInfo.pretty_name }}</span>
-                            <span class="lable-text">{{ showLocalBalance(swapOut?.denom, swapOut?.decimals) }}</span>
+                            <span class="label-text"
+                                >Recipient on
+                                {{ localChainInfo.pretty_name }}</span
+                            >
+                            <span class="lable-text">{{
+                                showLocalBalance(
+                                    swapOut?.denom,
+                                    swapOut?.decimals
+                                )
+                            }}</span>
                         </label>
-                        <input :value="localAddress(sender.cosmosAddress)" readonly type="text" class="input input-bordered" />
+                        <input
+                            :value="localAddress(sender.cosmosAddress)"
+                            readonly
+                            type="text"
+                            class="input border border-gray-300 dark:border-gray-600"
+                        />
                     </div>
                     <div v-if="error" class="text-error mt-3">
                         <span>{{ error }}.</span>
@@ -874,8 +1037,8 @@ async function connect() {
                     <div class="mt-5">
                         <button
                             class="btn btn-primary w-full ping-connect-confirm capitalize text-base"
-                            :class="sending ? 'loading' : ''"
                             :disabled="disableWithdraw"
+                            :class="{ 'loading relative start-0': sending }"
                             @click="doWithdraw()"
                         >
                             Withdraw
@@ -899,7 +1062,7 @@ async function connect() {
                     <div class="mt-5">
                         <button
                             class="btn btn-primary w-full ping-connect-confirm capitalize text-base"
-                            :class="sending ? 'loading' : ''"
+                            :class="{ 'loading relative start-0': sending }"
                             @click="connect()"
                         >
                             Connect

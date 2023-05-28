@@ -3,21 +3,21 @@ import { computed, onMounted, ref } from 'vue';
 import { getDelegateRewards } from '../../../utils/http'
 
 const props = defineProps({
-    endpoint: {type: String, required: true },
-    sender: {type: String, required: true},
+    endpoint: { type: String, required: true },
+    sender: { type: String, required: true },
     params: String,
 });
 
-const rewards = ref([] as {reward: {amount: string, denom: string}, validator_address:string}[]) 
+const rewards = ref([] as { reward: { amount: string, denom: string }, validator_address: string }[])
 
 const msgs = computed(() => {
     return rewards.value.map(x => {
         return {
-          typeUrl: '/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward',
-          value: {
-            delegatorAddress: props.sender,
-            validatorAddress: x.validator_address,
-          },
+            typeUrl: '/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward',
+            value: {
+                delegatorAddress: props.sender,
+                validatorAddress: x.validator_address,
+            },
         }
     })
 })
@@ -25,11 +25,11 @@ const msgs = computed(() => {
 const isValid = computed(() => {
     let ok = true
     let error = ""
-    if(!props.sender) {
+    if (!props.sender) {
         ok = false
         error = "Sender is empty"
     }
-    if(rewards.value.length === 0 ) {
+    if (rewards.value.length === 0) {
         ok = false
         error = "No delegation found"
     }
@@ -42,7 +42,7 @@ function initial() {
     })
 }
 
-defineExpose({msgs, isValid, initial})
+defineExpose({ msgs, isValid, initial })
 </script>
 <template>
     <div>
@@ -50,7 +50,7 @@ defineExpose({msgs, isValid, initial})
             <label class="label">
                 <span class="label-text">Sender</span>
             </label>
-            <input :value="sender" type="text" class="input input-bordered" />
+            <input :value="sender" type="text" class="text-gray-600 dark:text-white input border !border-gray-300 dark:!border-gray-600" />
         </div>
     </div>
 </template>

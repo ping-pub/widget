@@ -77,14 +77,14 @@ defineExpose({msgs, isValid, initial})
             <label class="label">
                 <span class="label-text">Sender</span>
             </label>
-            <input :value="sender" type="text" class="input input-bordered" />
+            <input :value="sender" type="text" class="text-gray-600 dark:text-white input border !border-gray-300 dark:!border-gray-600" />
         </div>
         <div class="form-control">
             <label class="label">
                 <span class="label-text">Amount</span>
             </label>
             <label class="input-group">
-                <input v-model="amount" type="number" :placeholder="`Avaiable: ${delegation?.balance?.amount}${delegation?.balance?.denom}}`" class="input input-bordered w-full" />
+                <input v-model="amount" type="number" :placeholder="`Avaiable: ${delegation?.balance?.amount}${delegation?.balance?.denom}}`" class="input border border-gray-300 dark:border-gray-600 w-full" />
                 <select v-model="amountDenom" class="select select-bordered">
                     <option v-for="u in units">{{ u.denom }}</option>
                 </select>

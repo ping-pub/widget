@@ -1,112 +1,126 @@
 <script lang="ts" setup>
 import { ComputedRef, PropType, computed, onMounted, ref } from 'vue';
-import { getActiveValidators, getInactiveValidators, getStakingParam } from '../../../utils/http'
-import { decimal2percent } from '../../../utils/format'
+import {
+    getActiveValidators,
+    getInactiveValidators,
+    getStakingParam,
+} from '../../../utils/http';
+import { decimal2percent } from '../../../utils/format';
 import { Coin, CoinMetadata } from '../../../utils/type';
 import { TokenUnitConverter } from '../../../utils/TokenUnitConverter';
 
 const props = defineProps({
-    endpoint: {type: String, required: true },
-    sender: {type: String, required: true},
+    endpoint: { type: String, required: true },
+    sender: { type: String, required: true },
     balances: Object as PropType<Coin[]>,
     metadata: Object as PropType<Record<string, CoinMetadata>>,
     params: String,
 });
-const params = JSON.parse(props.params|| "{}")
+const params = JSON.parse(props.params || '{}');
 
-const validator = ref("")
+const validator = ref('');
 
-const activeValidators = ref([])
-const inactiveValidators = ref([])
-const stakingDenom = ref("")
-const unbondingTime = ref("")
-const amount = ref("")
-const amountDenom = ref("")
+const activeValidators = ref([]);
+const inactiveValidators = ref([]);
+const stakingDenom = ref('');
+const unbondingTime = ref('');
+const amount = ref('');
+const amountDenom = ref('');
 
 const msgs = computed(() => {
-    const convert = new TokenUnitConverter(props.metadata)
-    return [{
-        typeUrl: '/cosmos.staking.v1beta1.MsgDelegate',
-        value: {
-          delegatorAddress: props.sender,
-          validatorAddress: validator.value,
-          amount: convert.displayToBase(stakingDenom.value, {
-            amount: String(amount.value),
-            denom: amountDenom.value
-          }),
+    const convert = new TokenUnitConverter(props.metadata);
+    return [
+        {
+            typeUrl: '/cosmos.staking.v1beta1.MsgDelegate',
+            value: {
+                delegatorAddress: props.sender,
+                validatorAddress: validator.value,
+                amount: convert.displayToBase(stakingDenom.value, {
+                    amount: String(amount.value),
+                    denom: amountDenom.value,
+                }),
+            },
         },
-      }]
-})
+    ];
+});
 
-const list: ComputedRef<{
-    operator_address: string, 
-    description: {moniker: string}
-    commission: { commission_rates: {rate: string}}
-    status: string
-}[]> = computed(() => {
-    return [...activeValidators.value, ...inactiveValidators.value]
-})
+const list: ComputedRef<
+    {
+        operator_address: string;
+        description: { moniker: string };
+        commission: { commission_rates: { rate: string } };
+        status: string;
+    }[]
+> = computed(() => {
+    return [...activeValidators.value, ...inactiveValidators.value];
+});
 
 const available = computed(() => {
-    const convert = new TokenUnitConverter(props.metadata)
-    const base = props.balances?.find(x => x.denom === stakingDenom.value) || { amount: "0", denom: stakingDenom.value }
+    const convert = new TokenUnitConverter(props.metadata);
+    const base = props.balances?.find(
+        (x) => x.denom === stakingDenom.value
+    ) || { amount: '0', denom: stakingDenom.value };
     return {
         base,
-        display: convert.baseToDisplay(base)
-    }
-})
+        display: convert.baseToDisplay(base),
+    };
+});
 
 function loadInactiveValidators() {
-    getInactiveValidators(props.endpoint).then(x => {
-    inactiveValidators.value = x.validators
-})
+    getInactiveValidators(props.endpoint).then((x) => {
+        inactiveValidators.value = x.validators;
+    });
 }
 
 const units = computed(() => {
-    if(!props.metadata || !props.metadata[stakingDenom.value]) {
-        amountDenom.value = stakingDenom.value
-        return [{denom: stakingDenom.value, exponent: 0, aliases: []}]
+    if (!props.metadata || !props.metadata[stakingDenom.value]) {
+        amountDenom.value = stakingDenom.value;
+        return [{ denom: stakingDenom.value, exponent: 0, aliases: [] }];
     }
-    const list = props.metadata[stakingDenom.value].denom_units.sort((a, b) => b.exponent - a.exponent)
-    if(list.length > 0) amountDenom.value = list[0].denom
-    return list
-})
+    const list = props.metadata[stakingDenom.value].denom_units.sort(
+        (a, b) => b.exponent - a.exponent
+    );
+    if (list.length > 0) amountDenom.value = list[0].denom;
+    return list;
+});
 
 const isValid = computed(() => {
-    let ok = true
-    let error = ""
-    if(!validator.value) {
-        ok = false
-        error = "Validator is empty"
+    let ok = true;
+    let error = '';
+    if (!validator.value) {
+        ok = false;
+        error = 'Validator is empty';
     }
-    if(!(Number(amount.value) > 0)) {
-        ok = false
-        error = "Amount should be great than 0"
+    if (!(Number(amount.value) > 0)) {
+        ok = false;
+        error = 'Amount should be great than 0';
     }
-    if(!amountDenom.value) {
-        ok = false
-        error = "Amount Denom is empty"
+    if (!amountDenom.value) {
+        ok = false;
+        error = 'Amount Denom is empty';
     }
-    return { ok, error }
-})
+    return { ok, error };
+});
 
 function initial() {
-    activeValidators.value = []
-    validator.value = params.validator_address
-    getStakingParam(props.endpoint).then(x => {
-        stakingDenom.value = x.params.bond_denom
-        unbondingTime.value = x.params.unbonding_time
-    })
+    activeValidators.value = [];
+    validator.value = params.validator_address;
+    getStakingParam(props.endpoint).then((x) => {
+        stakingDenom.value = x.params.bond_denom;
+        unbondingTime.value = x.params.unbonding_time;
+    });
 
-    getActiveValidators(props.endpoint).then(x => {
-        activeValidators.value = x.validators
-        if(!params.validator_address) {
-            validator.value = x.validators.find(v => v.description.identity === '6783E9F948541962')?.operator_address
+    getActiveValidators(props.endpoint).then((x) => {
+        activeValidators.value = x.validators;
+        if (!params.validator_address) {
+            validator.value = x.validators.find(
+                (v) => v.description.identity === '6783E9F948541962'
+            )?.operator_address;
         }
-    })
+    });
 }
 
-defineExpose({msgs, isValid, initial})
+defineExpose({ msgs, isValid, initial });
 </script>
 <template>
     <div>
@@ -114,17 +128,25 @@ defineExpose({msgs, isValid, initial})
             <label class="label">
                 <span class="label-text">Sender</span>
             </label>
-            <input :value="sender" type="text" class="input input-bordered" />
+            <input
+                :value="sender"
+                type="text"
+                class="text-gray-600 dark:text-white input border !border-gray-300 dark:!border-gray-600"
+            />
         </div>
         <div class="form-control">
             <label class="label">
                 <span class="label-text">Validator</span>
-                <a class="label-text" @click="loadInactiveValidators()">Show Inactive</a>
+                <a class="label-text" @click="loadInactiveValidators()"
+                    >Show Inactive</a
+                >
             </label>
             <select v-model="validator" class="select select-bordered">
                 <option value="">Select a validator</option>
                 <option v-for="v in list" :value="v.operator_address">
-                    {{ v.description.moniker }} ({{ decimal2percent(v.commission.commission_rates.rate) }}%)
+                    {{ v.description.moniker }} ({{
+                        decimal2percent(v.commission.commission_rates.rate)
+                    }}%)
                     <span v-if="v.status !== 'BOND_STATUS_BONDED'">x</span>
                 </option>
             </select>
@@ -132,10 +154,18 @@ defineExpose({msgs, isValid, initial})
         <div class="form-control">
             <label class="label">
                 <span class="label-text">Amount</span>
-                <span>{{ available?.display.amount }}{{ available?.display.denom }}</span>
+                <span
+                    >{{ available?.display.amount
+                    }}{{ available?.display.denom }}</span
+                >
             </label>
             <label class="input-group">
-                <input v-model="amount" type="number" :placeholder="`Available: ${available?.display.amount}${available?.display.denom}`" class="input input-bordered w-full" />
+                <input
+                    v-model="amount"
+                    type="number"
+                    :placeholder="`Available: ${available?.display.amount}${available?.display.denom}`"
+                    class="input border border-gray-300 dark:border-gray-600 w-full"
+                />
                 <select v-model="amountDenom" class="select select-bordered">
                     <option v-for="u in units">{{ u.denom }}</option>
                 </select>
