@@ -29,6 +29,6 @@ jobs:
                   registry-url: '//registry.npmjs.org/'
             - run: npm config set //registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN
             - run: npm config ls
-            - run: npm run trypublish
+            - run: npm publish --registry=registry.npmjs.org
               env:
                   NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
