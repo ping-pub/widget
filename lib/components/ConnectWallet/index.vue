@@ -10,6 +10,7 @@ import {
 } from '../../../lib/wallet/Wallet';
 import { readWallet } from '../../../lib/wallet/Wallet';
 import { Icon } from '@iconify/vue';
+import { onMounted, onUnmounted } from 'vue';
 
 const props = defineProps({
     chainId: String,
@@ -42,6 +43,13 @@ const list = [
         logo: 'https://ping.pub/logos/metamask.png',
     }
 ];
+
+onMounted(() => {
+  window.addEventListener("keplr_keystorechange", connect)
+})
+onUnmounted(() => {
+  window.removeEventListener('keplr_keystorechange', connect)
+})
 
 async function initData() { }
 
