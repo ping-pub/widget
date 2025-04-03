@@ -42,7 +42,7 @@ export class LeapWallet implements AbstractWallet {
         return this.conf.hdPath && this.conf.hdPath.startsWith("m/44'/60")
     }
     async sign(transaction: Transaction): Promise<TxRaw> {
-        return this.signAmino(transaction)
+        return this.signDirect(transaction)
     }
     // @deprecated use signAmino instead
     // because signDirect is not supported ledger wallet

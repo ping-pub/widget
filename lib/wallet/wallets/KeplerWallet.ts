@@ -42,10 +42,10 @@ export class KeplerWallet implements AbstractWallet {
     }
     async sign(transaction: Transaction): Promise<TxRaw> {
         // sign wasm tx with signDirect
-        if(transaction.messages.findIndex(x => x.typeUrl.startsWith("/cosmwasm.wasm")) > -1) {
-            return this.signDirect(transaction)
-        }
-        return this.signAmino(transaction)
+        // if(transaction.messages.findIndex(x => x.typeUrl.startsWith("/cosmwasm.wasm")) > -1) {
+        //     return this.signDirect(transaction)
+        // }
+        return this.signDirect(transaction)
     }
     // @deprecated use signAmino instead
     // because signDirect is not supported ledger wallet
