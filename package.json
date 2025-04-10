@@ -1,12 +1,15 @@
 {
-    "name": "ping-widget",
+    "name": "@ping-pub/widget",
     "private": false,
-    "version": "0.3.9",
+    "version": "0.3.11",
     "type": "module",
-    "main": "dist/ping-widget.js",
+    "main": "dist/widget.js",
     "author": {
-        "name": "Alisa | Side Protocol",
-        "email": "alisa@side.one"
+        "name": "Ping",
+        "email": "18786721@qq.com"
+    },  
+    "publishConfig": {
+        "access": "public"
     },
     "homepage": "https://github.com/ping-pub/ping-widget",
     "repository": {
@@ -21,8 +24,6 @@
         "widget",
         "explorer",
         "blockchain",
-        "sidechain",
-        "Side Protocol",
         "Ping.pub"
     ],
     "scripts": {

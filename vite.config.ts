@@ -39,9 +39,9 @@ export default defineConfig({
         lib: {
             // Could also be a dictionary or array of multiple entry points
             entry: resolve(__dirname, 'lib/main.ts'),
-            name: 'ping-widget',
+            name: '@ping.pub/widget',
             // the proper extensions will be added
-            fileName: 'ping-widget',
+            fileName: 'widget',
         },
         commonjsOptions: {
             transformMixedEsModules: true,

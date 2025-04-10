@@ -1,6 +1,5 @@
 <script lang="ts" setup>
-import { PropType, computed, ref } from 'vue';
-import { CoinMetadata } from '../../../utils/type';
+import { computed, ref } from 'vue';
 
 const props = defineProps({
     endpoint: { type: String, required: true },
@@ -13,7 +12,7 @@ const option = ref("1")
 
 const msgs = computed(() => {
     return [{
-        typeUrl: '/cosmos.gov.v1beta1.MsgVote',
+        typeUrl: '/cosmos.gov.v1.MsgVote', // '/cosmos.gov.v1beta1.MsgVote',
         value: {
             voter: props.sender,
             proposalId: params.value.proposal_id,

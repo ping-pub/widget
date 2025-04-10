@@ -29,7 +29,7 @@ const available = computed(() => {
 const msgs = computed(() => {
     const convert = new TokenUnitConverter(props.metadata)
     return [{
-        typeUrl: '/cosmos.gov.v1beta1.MsgDeposit',
+        typeUrl: '/cosmos.gov.v1.MsgDeposit',
         value: {
           depositor: props.sender,
           proposalId: params.value.proposal_id,
